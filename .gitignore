@@ -1,4 +1,4 @@
-
+.ipynb_checkpoints
 *.pyc
 
-*.pyc
+db_helper/__init__.pyc
