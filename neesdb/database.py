@@ -26,7 +26,7 @@ class Database:
         self._fields_grid.export_all(self._fields_export_callback)
 
     def _fields_export_callback(self, fields_df):
-        fields_array = fields_df.loc[fields_df["Show"] == "Yes"]["Fields"].values;
+        fields_array = fields_df[fields_df == "Yes"]
         if self._all_tips or self._fields_tip:
             self._code("<p>You can pre-select fields in the query interface if you know the names of the fields that you would like to query. To repeat this query, use this code:", "db.fields(" + str(fields_array) + ")")
         self._show_tip = True
@@ -42,6 +42,10 @@ class Database:
         tip_string = tip_string + code + "</code>"
         self._tip(tip_string)
 
+    def _video(self, text, video):
+        self._tip("<table><tr><td style='vertical-align: top; padding-right: 10px;'><p>" + text + "</p></td><td><video autoplay loop controls style='float: right'><source src='" + video + "' type='video/mp4'></video></td></tr></table>")
+
+
     def _check_bad_fields(self, fields=None):
         if (fields is not None):
             fieldseries = pandas.Series(fields)
@@ -56,12 +60,10 @@ class Database:
 
     def _generate_field_selector(self, fields=None, name="Show"):
         raw_cat = pandas.Categorical([ "No" for field in self._df.columns.values], categories=["Yes", "No"])
-        show = pandas.Series(raw_cat, name=name)
-        df2 = pandas.concat([self._fields, show], axis=1)
-        if (fields is not None):
-            df3 = df2[df2['Fields'].isin(fields)]
-            for index, value in df3["Fields"].iteritems():
-                df2.set_value(index, name, "Yes")
+        show = pandas.Series(raw_cat, name=name, index=self._fields)
+        if fields is not None:
+            show[fields] = "Yes"
+        df2 = pandas.concat([show], axis=1)
         return df2
 
     def fields(self, fields=None):
@@ -73,9 +75,9 @@ class Database:
         df2 = self._generate_field_selector(fields)
 
         if self._all_tips or self._fields_tip:
-            self._tip("<table><tr><td style='vertical-align: top; padding-right: 10px;'><p>Choose the fields you wish to view in the table below. You may double click on the \"no\" next to a field name, select \"Yes\" and then click on a different cell to change that field's selection. You may also use the filter controls to search for fields. When you are finished, press OK at the bottom of this cell's output.</p></td><td><video autoplay loop controls style='float: right'><source src='./neesdb/select_fields.mp4' type='video/mp4'></video></td></tr></table>")
+            self._video("Choose the fields you wish to view in the table below. You may double click on the \"no\" next to a field name, select \"Yes\" and then click on a different cell to change that field's selection. You may also use the filter controls to search for fields. When you are finished, press OK at the bottom of this cell's output.", "./neesdb/select_fields.mp4")
         self._fields_grid = show_grid(df2)
-
+#
         ok = widgets.Button(description="OK")
         ok.on_click(self._fields_ok)
         display(ok)
@@ -94,7 +96,7 @@ class Database:
         export_button.on_click(self._export_button_onclick)
         display(export_button)
 
-    def export_fields_view(self, fields=None):
+    def _export_fields_view(self, fields=None):
         if self._visible_fields is None:
             raise ValueError("No fields are in the current display. You must first call db.show() with a list of fields to query.")
         if fields is not None:
@@ -102,6 +104,9 @@ class Database:
         else:
             self._export_fields_view_tip = True
 
+        if self._all_tips or self._export_fields_view_tip:
+            pass
         df2 = self._generate_field_selector(fields, name="Files")
+        self._export_files_grid = show_grid(df2)
 
 
