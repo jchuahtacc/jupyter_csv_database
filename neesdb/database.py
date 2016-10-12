@@ -30,7 +30,7 @@ class Database:
         if self._all_tips or self._fields_tip:
             self._code("<p>You can pre-select fields in the query interface if you know the names of the fields that you would like to query. To repeat this query, use this code:", "db.fields(" + str(fields_array) + ")")
         self._show_tip = True
-        self.show(fields_df.loc[fields_df["Show"] == "Yes"]["Fields"].values)
+        self.show(fields_array)
 
     def _tip(self, text):
         display(widgets.HTML("<div style='border-left: 6px solid #ccc!important; background-color: #ddddff!important; padding: 0.01em 16px; padding-bottom: 16px;'><h4>neesdb tip:</h4>" + text + "</div>"))
@@ -91,14 +91,19 @@ class Database:
         if self._all_tips or self._show_tip:
             self._code("If you know the names of the fields in this .csv, you can show them directly using the following code:", "db.show(" + str(fields) + ")")
         df = self._df[fields]
+        self._video("Filter the data for the rows that you wish to export.", "./neesdb/select_fields.mp4")
         self._data_grid = show_grid(df)
         export_button = widgets.Button(description="Export Files")
         export_button.on_click(self._export_button_onclick)
         display(export_button)
 
+    def _export_continue_onclick(self, b):
+        # Ask for export filename
+        pass
+
     def _export_fields_view(self, fields=None):
-        if self._visible_fields is None:
-            raise ValueError("No fields are in the current display. You must first call db.show() with a list of fields to query.")
+        if self._data_grid is None:
+            raise ValueError("No data has been retrieved in the current display.")
         if fields is not None:
             self._check_bad_fields(fields)
         else:
@@ -106,7 +111,7 @@ class Database:
 
         if self._all_tips or self._export_fields_view_tip:
             pass
+        self._video("Please select which fields contain filenames to export.", "./neesdb/select_fields.mp4")
         df2 = self._generate_field_selector(fields, name="Files")
         self._export_files_grid = show_grid(df2)
-
-
+        export_continue_button = widgets.Button(description="Continue")
