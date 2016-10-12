@@ -11,6 +11,11 @@ class Database:
     _show_tip = False
     _all_tips = False
     _data_grid = None
+    _export_fields = None
+    _export_fields_grid = None
+    _visible_fields = None
+    _export_fields_view_tip = False
+
     def __init__(self, csv, tips=False):
         self._all_tips = tips
         self._csv = csv
@@ -30,10 +35,14 @@ class Database:
     def _tip(self, text):
         display(widgets.HTML("<div style='border-left: 6px solid #ccc!important; background-color: #ddddff!important; padding: 0.01em 16px; padding-bottom: 16px;'><h4>neesdb tip:</h4>" + text + "</div>"))
 
-    def _code(self, text, code):
-        self._tip("<p>" + text + "</p><br /><code>from neeshub import Database\ndb = Database('" + self._csv + "')\n" + code + "</code>")
+    def _code(self, text, code, code_header=True):
+        tip_string = "<p>" + text + "</p><br /><code>"
+        if code_header:
+            tip_string = tip_string + "from neeshub import Database\ndb = Database('" + self._csv + "')\n"
+        tip_string = tip_string + code + "</code>"
+        self._tip(tip_string)
 
-    def fields(self, fields=None):
+    def _check_bad_fields(self, fields=None):
         if (fields is not None):
             fieldseries = pandas.Series(fields)
             mismatch = fieldseries.isin(self._fields.values)
@@ -43,15 +52,25 @@ class Database:
                 for index, value in mismatch.iteritems():
                     badfields.append(fields[index])
                 raise ValueError("The following fields are not in this .csv file: " + str(badfields))
-        else:
-            self._fields_tip = True
+
+
+    def _generate_field_selector(self, fields=None, name="Show"):
         raw_cat = pandas.Categorical([ "No" for field in self._df.columns.values], categories=["Yes", "No"])
-        show = pandas.Series(raw_cat, name="Show")
+        show = pandas.Series(raw_cat, name=name)
         df2 = pandas.concat([self._fields, show], axis=1)
         if (fields is not None):
             df3 = df2[df2['Fields'].isin(fields)]
             for index, value in df3["Fields"].iteritems():
-                df2.set_value(index, "Show", "Yes")
+                df2.set_value(index, name, "Yes")
+        return df2
+
+    def fields(self, fields=None):
+        if (fields is not None):
+            self._check_bad_fields(fields)
+        else:
+            self._fields_tip = True
+
+        df2 = self._generate_field_selector(fields)
 
         if self._all_tips or self._fields_tip:
             self._tip("<table><tr><td style='vertical-align: top; padding-right: 10px;'><p>Choose the fields you wish to view in the table below. You may double click on the \"no\" next to a field name, select \"Yes\" and then click on a different cell to change that field's selection. You may also use the filter controls to search for fields. When you are finished, press OK at the bottom of this cell's output.</p></td><td><video autoplay loop controls style='float: right'><source src='./neesdb/select_fields.mp4' type='video/mp4'></video></td></tr></table>")
@@ -61,8 +80,28 @@ class Database:
         ok.on_click(self._fields_ok)
         display(ok)
 
+    def _export_button_onclick(self, b):
+        self._export_fields_view_tip = True
+        self._export_fields_view()
+
     def show(self, fields=None):
+        self._visible_fields = fields
         if self._all_tips or self._show_tip:
             self._code("If you know the names of the fields in this .csv, you can show them directly using the following code:", "db.show(" + str(fields) + ")")
         df = self._df[fields]
         self._data_grid = show_grid(df)
+        export_button = widgets.Button(description="Export Files")
+        export_button.on_click(self._export_button_onclick)
+        display(export_button)
+
+    def export_fields_view(self, fields=None):
+        if self._visible_fields is None:
+            raise ValueError("No fields are in the current display. You must first call db.show() with a list of fields to query.")
+        if fields is not None:
+            self._check_bad_fields(fields)
+        else:
+            self._export_fields_view_tip = True
+
+        df2 = self._generate_field_selector(fields, name="Files")
+
+
