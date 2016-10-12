@@ -26,7 +26,7 @@ class Database:
         self._fields_grid.export_all(self._fields_export_callback)
 
     def _fields_export_callback(self, fields_df):
-        fields_array = fields_df[fields_df == "Yes"]
+        fields_array = fields_df[fields_df["Show"] == "Yes"]["Fields"].values
         if self._all_tips or self._fields_tip:
             self._code("<p>You can pre-select fields in the query interface if you know the names of the fields that you would like to query. To repeat this query, use this code:", "db.fields(" + str(fields_array) + ")")
         self._show_tip = True
