@@ -59,10 +59,11 @@ class Database:
 
 
     def _generate_field_selector(self, fields=None, name="Show"):
-        raw_cat = pandas.Categorical([ "No" for field in self._df.columns.values], categories=["Yes", "No"])
-        show = pandas.Series(raw_cat, name=name, index=self._fields)
+        # raw_cat = pandas.Categorical([ "No" for field in self._df.columns.values], categories=["Yes", "No"])
+        show = pandas.Series(False, name=name, index=self._fields)
         if fields is not None:
-            show[fields] = "Yes"
+            show[fields] = True
+            #show[fields] = "Yes"
         df2 = pandas.concat([show], axis=1)
         return df2
 

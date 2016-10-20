@@ -1,0 +1,116 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "from neesdb import Database\n",
+    "db = Database(\"example.csv\")\n",
+    "db.fields()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from neesdb import FileBrowser\n",
+    "f = FileBrowser()\n",
+    "f.widget()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": false,
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "result = None\n",
+    "def callback(df):\n",
+    "    global result\n",
+    "    result = df\n",
+    "\n",
+    "widget.export_view(callback)\n",
+    "#from zipfile import ZipFile\n",
+    "\n",
+    "#with ZipFile('zippy.zip', 'w') as myZip:\n",
+    "#    myZip.write('workfile')\n",
+    "#    myZip.close()\n",
+    "\n",
+    "    "
+   ]
+  }
+ ],
+ "metadata": {
+  "anaconda-cloud": {},
+  "kernelspec": {
+   "display_name": "Python [Root]",
+   "language": "python",
+   "name": "Python [Root]"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  },
+  "widgets": {
+   "state": {
+    "16ce411d5eb749c7b9319c7ea85c3987": {
+     "views": [
+      {
+       "cell_index": 0
+      }
+     ]
+    },
+    "95fe58a447b441d382eddbaafb79878c": {
+     "views": [
+      {
+       "cell_index": 0
+      }
+     ]
+    },
+    "a58db0294ec345a48019744e0aabe7fb": {
+     "views": [
+      {
+       "cell_index": 0
+      }
+     ]
+    },
+    "ad0fb29f841643a58ab03f1d1d861372": {
+     "views": [
+      {
+       "cell_index": 0
+      }
+     ]
+    },
+    "c83e317a2657404b8ad8f69bacd21bbe": {
+     "views": [
+      {
+       "cell_index": 0
+      }
+     ]
+    }
+   },
+   "version": "1.2.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

@@ -1,24 +1,42 @@
-# Jupyter CSV "Database"
+# ipython-widgetboilerplate
+Boilerplate code for custom python Jupyter Notebook widgets (IPython).
 
-Using a Jupyter Notebook to read, filter and export data from a CSV file
+This repository contains a simple empty widget, and can be used as a starting point for your custom widget project.  It is comprised of front-end and back-end widget code and a basic deployment solution using [jupyter-pip](https://github.com/jdfreder/jupyter-pip).
 
-### Setup
+## The pieces
 
-This project requires `ipywidgets` and `qgrid`. I have submitted a [pull request](https://github.com/quantopian/qgrid/pull/93) to [quantopian/qgrid](https://github.com/quantopian/qgrid) that implements an `export_view` function, required for this project. Until it is merged, the necessary functionality is available in the fork [jchuahtacc/qgrid](https://github.com/jchuahtacc/qgrid).
+`setup.py` Install script.  Contains [jupyter-pip](https://github.com/jdfreder/jupyter-pip) logic.
 
-I used the following statements to enable the necessary widgets and notebook extensions:
+`mywidget/mywidget.js` Custom widget front-end Javascript code.  This contains the logic that describes how the widget will be rendered in the webbrowser.
+
+`mywidget/mywidget.py` Custom widget back-end Python code.  This contains the back-end logic, that describes the data structure of the widget's model (this is what gets synced between the front-end and back-end, Javascript and Python in this case).  This is also where the Jupyter notebook looks to find the location of the front-end code (`mywidget/mywidget.js`).
+
+`mywidget/__init__.py` Describes the namespace in Python.
+
+`examples/` Example notebooks using the widget.
+
+## Deployment
+Installation is made easy by [jupyter-pip](https://github.com/jdfreder/jupyter-pip).  To install  
 
 ```
-conda install -c conda-forge ipywidgets
-conda install -c conda-forge qgrid
-jupyter nbextension enable --py --sys-prefix widgetsnbextension
+pip install .
 ```
 
-Then, I added qgrid's widgets by using:
+For development installs  
 
 ```
-import qgrid
-qgrid.nbinstall()
+pip install -e .
 ```
 
-At this point, QGrid and its `qgridjs` widgets must be patched from [jchuahtacc/qgrid](https://github.com/jchuahtacc/qgrid)
+If can deploy your package to PYPI, and then your user will be able to install it like any other package  
+
+```
+pip install PACKAGENAME
+```
+
+## Troubleshooting
+
+Sometimes pip or jupyter-pip, or a combination of the two, misbehaves.  When that happens, try installing by using  
+```
+python setup.py install
+```
