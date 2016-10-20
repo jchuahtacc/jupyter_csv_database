@@ -1,5 +1,6 @@
 import pandas
 from qgrid import show_grid
+from .fields import FieldsWidget
 import ipywidgets as widgets
 from IPython.display import display
 class Database:
@@ -22,15 +23,12 @@ class Database:
         self._df = pandas.read_csv(csv)
         self._fields = pandas.Series([ field for field in self._df.columns.values], name="Fields")
 
-    def _fields_ok(self, b):
-        self._fields_grid.export_all(self._fields_export_callback)
-
-    def _fields_export_callback(self, fields_df):
-        fields_array = fields_df[fields_df["Show"] == "Yes"]["Fields"].values
-        if self._all_tips or self._fields_tip:
-            self._code("<p>You can pre-select fields in the query interface if you know the names of the fields that you would like to query. To repeat this query, use this code:", "db.fields(" + str(fields_array) + ")")
-        self._show_tip = True
-        self.show(fields_array)
+    def _get_selected_fields(self, widget):
+        fields_array = [ ]
+        for field in widget.fields:
+            if widget.fields[field]:
+                fields_array.append(field)
+        return fields_array
 
     def _tip(self, text):
         display(widgets.HTML("<div style='border-left: 6px solid #ccc!important; background-color: #ddddff!important; padding: 0.01em 16px; padding-bottom: 16px;'><h4>neesdb tip:</h4>" + text + "</div>"))
@@ -57,15 +55,14 @@ class Database:
                     badfields.append(fields[index])
                 raise ValueError("The following fields are not in this .csv file: " + str(badfields))
 
-
-    def _generate_field_selector(self, fields=None, name="Show"):
-        # raw_cat = pandas.Categorical([ "No" for field in self._df.columns.values], categories=["Yes", "No"])
-        show = pandas.Series(False, name=name, index=self._fields)
+    def _make_fields_widget(self, fields):
+        _fields_widget = FieldsWidget()
+        fields_dict = dict((field, False) for field in self._df.columns.values)
         if fields is not None:
-            show[fields] = True
-            #show[fields] = "Yes"
-        df2 = pandas.concat([show], axis=1)
-        return df2
+            for field in fields:
+                fields_dict[field] = True
+        _fields_widget.fields = fields_dict
+        return _fields_widget
 
     def fields(self, fields=None):
         if (fields is not None):
@@ -73,14 +70,16 @@ class Database:
         else:
             self._fields_tip = True
 
-        df2 = self._generate_field_selector(fields)
+        _fields_widget = self._make_fields_widget(fields)
 
         if self._all_tips or self._fields_tip:
             self._video("Choose the fields you wish to view in the table below. You may double click on the \"no\" next to a field name, select \"Yes\" and then click on a different cell to change that field's selection. You may also use the filter controls to search for fields. When you are finished, press OK at the bottom of this cell's output.", "./neesdb/select_fields.mp4")
-        self._fields_grid = show_grid(df2)
-#
+
+        display(_fields_widget)
+        def _click(widget):
+            self.show(self._get_selected_fields(_fields_widget))
         ok = widgets.Button(description="OK")
-        ok.on_click(self._fields_ok)
+        ok.on_click(_click)
         display(ok)
 
     def _export_button_onclick(self, b):
@@ -110,9 +109,16 @@ class Database:
         else:
             self._export_fields_view_tip = True
 
+        _fields_widget = self._make_fields_widget(fields)
+
         if self._all_tips or self._export_fields_view_tip:
             pass
         self._video("Please select which fields contain filenames to export.", "./neesdb/select_fields.mp4")
-        df2 = self._generate_field_selector(fields, name="Files")
-        self._export_files_grid = show_grid(df2)
-        export_continue_button = widgets.Button(description="Continue")
+
+        display(_fields_widget)
+        def _click(widget):
+            selected_fields = self._get_selected_fields(_fields_widget)
+            self._export_continue_onclick(selected_fields)
+        ok = widgets.Button(description="Continue")
+        ok.on_click(_click)
+        display(ok)
