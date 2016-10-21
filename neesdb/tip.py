@@ -10,4 +10,8 @@ class TipWidget(DOMWidget):
 
     def __init__(self, *args, **kwargs):
         super(TipWidget, self).__init__(*args, **kwargs)
+        self.on_msg(self._handleMsg)
 
+    def _handleMsg(self, widget, content, buffers=None):
+        if content['msg'] == 'close':
+            self.close()
