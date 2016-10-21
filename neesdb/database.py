@@ -4,6 +4,8 @@ from .fields import FieldsWidget
 from .tip import TipWidget
 import ipywidgets as widgets
 from IPython.display import display
+import warnings
+warnings.filterwarnings('ignore')
 class Database:
     _csv = None
     _fields_grid = None
@@ -56,6 +58,7 @@ class Database:
             self._check_bad_fields(fields)
         else:
             self._fields_tip = True
+            self._show_tip = True
 
         _fields_widget = self._make_fields_widget(fields)
 
@@ -89,9 +92,21 @@ class Database:
         t.src = "place_holder.mp4"
         display(t)
         self._data_grid = show_grid(df)
+        def add_button_click(widget):
+            self._data_grid.add_row()
+
+        def remove_button_click(widget):
+            self._data_grid.remove_row()
+
+        add_button = widgets.Button(description="Add Row")
+        add_button.on_click(add_button_click)
+        remove_button = widgets.Button(description="Remove Row")
+        remove_button.on_click(remove_button_click)
         export_button = widgets.Button(description="Export Files")
         export_button.on_click(self._export_button_onclick)
-        display(export_button)
+        hbox = widgets.HBox(children=[add_button, remove_button, export_button])
+        display(hbox)
+
 
     def _export_continue_onclick(self, b):
         # Ask for export filename
