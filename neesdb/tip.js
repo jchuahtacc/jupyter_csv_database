@@ -12,7 +12,7 @@ define(['jquery', path ], function($, widget) {
         render: function() {
             TipWidgetView.__super__.render.apply(this, arguments);
 
-            this.$view = $("<div style='border-left: 6px solid #ccc!important; background-color: #ddddff!important; padding: 0.01em 16px; padding-bottom:   16px;'><h4>neesdb tip:</h4><table><tr><td data-role='left' style='vertical-align: top; padding-right: 10px;'><p data-role='tip' class='hidden'></p><br /><code data-role='code' class='hidden'></code></td><td data-role='right'><video style='width: 100%;' data-role='video' autoplay loop controls style='float: right' class='hidden'><source data-role='src' type='video/mp4'></video></td></tr></table></div>");
+            this.$view = $("<div style='border-left: 6px solid #ccc!important; background-color: #ddddff!important; padding: 0.01em 16px; padding-bottom:   16px;'><h4>neesdb tip:</h4><table style='width: 100%;'><tr><td data-role='left' style='vertical-align: top; padding-right: 10px;'><p data-role='tip' class='hidden'></p><br /><code data-role='code' class='hidden'></code></td><td data-role='right'><video style='width: 100%;' data-role='video' autoplay loop controls style='float: right' class='hidden'><source data-role='src' type='video/mp4'></video></td></tr></table></div>");
             $(this.el).append(this.$view);
             this.listenTo(this.model, 'change:tip', this.tip_changed, this);
             this.listenTo(this.model, 'change:code', this.code_changed, this);
