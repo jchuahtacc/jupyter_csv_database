@@ -1,11 +1,19 @@
 import pandas
+import json
 from qgrid import show_grid
+from .fields import FieldsWidget
+from .tip import TipWidget
 import ipywidgets as widgets
 from IPython.display import display
+from ipywidgets_file_selector import IPFileSelector
+import warnings
+warnings.filterwarnings('ignore')
+
 class Database:
     _csv = None
     _fields_grid = None
     _df = None
+    _show_df = None
     _fields = None
     _fields_tip = False
     _show_tip = False
@@ -15,6 +23,20 @@ class Database:
     _export_fields_grid = None
     _visible_fields = None
     _export_fields_view_tip = False
+    _grid_options = {
+        'fullWidthRows': True,
+        'syncColumnCellResize': True,
+        'forceFitColumns': True,
+        'defaultColumnWidth': 150,
+        'rowHeight': 28,
+        'enableColumnReorder': False,
+        'enableTextSelectionOnCells': True,
+        'editable': True,
+        'autoEdit': True,
+        'multiSelect' : False
+    }
+    _add_files_box = None
+    _export_files_box = None
 
     def __init__(self, csv, tips=False):
         self._all_tips = tips
@@ -22,29 +44,12 @@ class Database:
         self._df = pandas.read_csv(csv)
         self._fields = pandas.Series([ field for field in self._df.columns.values], name="Fields")
 
-    def _fields_ok(self, b):
-        self._fields_grid.export_all(self._fields_export_callback)
-
-    def _fields_export_callback(self, fields_df):
-        fields_array = fields_df[fields_df["Show"] == "Yes"]["Fields"].values
-        if self._all_tips or self._fields_tip:
-            self._code("<p>You can pre-select fields in the query interface if you know the names of the fields that you would like to query. To repeat this query, use this code:", "db.fields(" + str(fields_array) + ")")
-        self._show_tip = True
-        self.show(fields_array)
-
-    def _tip(self, text):
-        display(widgets.HTML("<div style='border-left: 6px solid #ccc!important; background-color: #ddddff!important; padding: 0.01em 16px; padding-bottom: 16px;'><h4>neesdb tip:</h4>" + text + "</div>"))
-
-    def _code(self, text, code, code_header=True):
-        tip_string = "<p>" + text + "</p><br /><code>"
-        if code_header:
-            tip_string = tip_string + "from neeshub import Database\ndb = Database('" + self._csv + "')\n"
-        tip_string = tip_string + code + "</code>"
-        self._tip(tip_string)
-
-    def _video(self, text, video):
-        self._tip("<table><tr><td style='vertical-align: top; padding-right: 10px;'><p>" + text + "</p></td><td><video autoplay loop controls style='float: right'><source src='" + video + "' type='video/mp4'></video></td></tr></table>")
-
+    def _get_selected_fields(self, widget):
+        fields_array = [ ]
+        for field in widget.fields:
+            if widget.fields[field]:
+                fields_array.append(field)
+        return fields_array
 
     def _check_bad_fields(self, fields=None):
         if (fields is not None):
@@ -57,46 +62,134 @@ class Database:
                     badfields.append(fields[index])
                 raise ValueError("The following fields are not in this .csv file: " + str(badfields))
 
-
-    def _generate_field_selector(self, fields=None, name="Show"):
-        # raw_cat = pandas.Categorical([ "No" for field in self._df.columns.values], categories=["Yes", "No"])
-        show = pandas.Series(False, name=name, index=self._fields)
+    def _make_fields_widget(self, fields):
+        _fields_widget = FieldsWidget()
+        fields_dict = dict((field, False) for field in self._df.columns.values)
         if fields is not None:
-            show[fields] = True
-            #show[fields] = "Yes"
-        df2 = pandas.concat([show], axis=1)
-        return df2
+            for field in fields:
+                fields_dict[field] = True
+        _fields_widget.fields = fields_dict
+        return _fields_widget
 
     def fields(self, fields=None):
         if (fields is not None):
             self._check_bad_fields(fields)
         else:
             self._fields_tip = True
+            self._show_tip = True
 
-        df2 = self._generate_field_selector(fields)
+        _fields_widget = self._make_fields_widget(fields)
 
         if self._all_tips or self._fields_tip:
-            self._video("Choose the fields you wish to view in the table below. You may double click on the \"no\" next to a field name, select \"Yes\" and then click on a different cell to change that field's selection. You may also use the filter controls to search for fields. When you are finished, press OK at the bottom of this cell's output.", "./neesdb/select_fields.mp4")
-        self._fields_grid = show_grid(df2)
-#
+            t = TipWidget()
+            t.tip = "Select the fields that you wish to view"
+            t.src = "select_fields.mp4"
+            display(t)
+
+        display(_fields_widget)
+        def _click(widget):
+            _fields_widget.close()
+            widget.close()
+            self.show(self._get_selected_fields(_fields_widget))
         ok = widgets.Button(description="OK")
-        ok.on_click(self._fields_ok)
+        ok.on_click(_click)
         display(ok)
 
-    def _export_button_onclick(self, b):
-        self._export_fields_view_tip = True
-        self._export_fields_view()
+    def _possible_file_fields(self):
+        valid_fields = [ ]
+        for field in self._visible_fields:
+            series = self._show_df[field]
+            for index, value in series.iteritems():
+                value = str(value)
+                if value is not None and not value == "nan":
+                    try:
+                        json.loads(value)
+                    except Exception:
+                        break
+                if index == series.size - 1:
+                    valid_fields.append(field)
+        return valid_fields
 
     def show(self, fields=None):
         self._visible_fields = fields
         if self._all_tips or self._show_tip:
-            self._code("If you know the names of the fields in this .csv, you can show them directly using the following code:", "db.show(" + str(fields) + ")")
-        df = self._df[fields]
-        self._video("Filter the data for the rows that you wish to export.", "./neesdb/select_fields.mp4")
-        self._data_grid = show_grid(df)
-        export_button = widgets.Button(description="Export Files")
-        export_button.on_click(self._export_button_onclick)
-        display(export_button)
+            t = TipWidget()
+            t.tip = "If you know the names of the fields in this .csv and you wish to bypass the user interface, you can use the following code"
+            t.code = "from neesdb import Database\ndb = new Database('" + self._csv + "')\ndb.show(" + str(fields) + ")"
+            display(t)
+        self._show_df = self._df[fields]
+        t = TipWidget()
+        t.tip = "Filter the data for the rows you wish edit or view. You may add or remove rows from the database, add file references to the currently selected row, and export all files in the current view. If you modify, add or remove data or files, make sure you click 'Save changes'."
+        t.src = "place_holder.mp4"
+        display(t)
+        self._data_grid = show_grid(self._show_df, grid_options=self._grid_options)
+        def add_button_click(widget):
+            self._data_grid.add_row()
+
+        def remove_button_click(widget):
+            self._data_grid.remove_row()
+
+        def add_files_button_click(widget):
+            selected_rows = self._data_grid.get_selected_rows()
+            if len(selected_rows) > 0:
+                fields = self._possible_file_fields()
+                label = widgets.Label(value="Select a field to add files")
+                display(label)
+                radio = widgets.RadioButtons(options=fields)
+                display(radio)
+                def go_for_files(widget):
+                    label.close()
+                    radio.close()
+                    widget.close()
+                    tip = TipWidget()
+                    tip.tip = "Select files to place in this field."
+                    display(tip)
+                    files = IPFileSelector()
+                    files.selected = json.loads(self._show_df[radio.value][self._data_grid.get_selected_rows()[0]])
+                    display(files)
+                    def ok_file_select(widget):
+                        newjson = json.dumps(files.selected)
+                        self._data_grid.df[radio.value][self._data_grid.get_selected_rows()[0]] = newjson
+                        self._data_grid._df_changed()
+                        tip.close()
+                        files.close()
+                        widget.close()
+                    ok = widgets.Button(description="OK")
+                    ok.on_click(ok_file_select)
+                    display(ok)
+                    pass
+                ok = widgets.Button(description="OK")
+                ok.on_click(go_for_files)
+                display(ok)
+                self._add_files_box=widgets.Box(children=[label, radio, ok])
+
+        def save_button_click(widget):
+            pass
+
+        def export_button_click(widget):
+            fields = self._possible_file_fields()
+            label = widgets.Label(value="Select fields containing files you wish to export")
+            display(label)
+            checks = [ widgets.Checkbox(description=field) for field in fields ]
+            box = widgets.Box(children=checks)
+            display(box)
+            ok = widgets.Button(description="OK")
+            display(ok)
+            pass
+
+        save_button = widgets.Button(description='Save changes')
+        save_button.on_click(save_button_click)
+        add_button = widgets.Button(description="Add row")
+        add_button.on_click(add_button_click)
+        remove_button = widgets.Button(description="Remove row")
+        remove_button.on_click(remove_button_click)
+        add_files_button = widgets.Button(description="Add files")
+        add_files_button.on_click(add_files_button_click)
+        export_button = widgets.Button(description="Export files")
+        export_button.on_click(export_button_click)
+        hbox = widgets.HBox(children=[save_button, add_button, remove_button, add_files_button, export_button])
+        display(hbox)
+
 
     def _export_continue_onclick(self, b):
         # Ask for export filename
@@ -110,9 +203,20 @@ class Database:
         else:
             self._export_fields_view_tip = True
 
+        _fields_widget = self._make_fields_widget(fields)
+
         if self._all_tips or self._export_fields_view_tip:
             pass
-        self._video("Please select which fields contain filenames to export.", "./neesdb/select_fields.mp4")
-        df2 = self._generate_field_selector(fields, name="Files")
-        self._export_files_grid = show_grid(df2)
-        export_continue_button = widgets.Button(description="Continue")
+        t = TipWidget()
+        t.tip = "Select the fields which contain filenames to export."
+        t.video = "place_holder.mp4"
+        display(t)
+
+        display(_fields_widget)
+        def _click(widget):
+            selected_fields = self._get_selected_fields(_fields_widget)
+            self._export_continue_onclick(selected_fields)
+        ok = widgets.Button(description="Continue")
+        ok.on_click(_click)
+        display(ok)
+
