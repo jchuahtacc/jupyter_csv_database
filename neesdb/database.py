@@ -100,9 +100,11 @@ class Database:
         for field in self._visible_fields:
             series = self._show_df[field]
             for index, value in series.iteritems():
-                value = str(value)
-                if value is not None and not value == "nan":
+                valuestr = str(value)
+                if valuestr is not None and not valuestr == "nan":
                     try:
+                        if unicode(value).isnumeric():
+                            break
                         json.loads(value)
                     except Exception:
                         break
@@ -145,7 +147,9 @@ class Database:
                     tip.tip = "Select files to place in this field."
                     display(tip)
                     files = IPFileSelector()
-                    files.selected = json.loads(self._show_df[radio.value][self._data_grid.get_selected_rows()[0]])
+                    existing = self._show_df[radio.value][self._data_grid.get_selected_rows()[0]]
+                    if len(existing) > 0:
+                        files.selected = json.loads(existing)
                     display(files)
                     def ok_file_select(widget):
                         newjson = json.dumps(files.selected)
