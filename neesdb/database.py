@@ -6,6 +6,9 @@ from .tip import TipWidget
 import ipywidgets as widgets
 from IPython.display import display
 from ipywidgets_file_selector import IPFileSelector
+import zipfile
+import os
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -112,6 +115,46 @@ class Database:
                     valid_fields.append(field)
         return valid_fields
 
+    def _get_file_list(self, tree):
+        filelist = [ ]
+        def _recurse_file_tree(subtree, path):
+            for key, value in subtree.iteritems():
+                if type(value) is dict:
+                    _recurse_file_tree(subtree[key], key + "/")
+                else:
+                    filelist.append(path + key)
+        _recurse_file_tree(tree, "")
+        return filelist
+
+    def export(self, fields=None, filename=None):
+        try:
+            zip = zipfile.ZipFile(filename, 'w')
+            for field in fields:
+                for index in self._data_grid.filtered:
+                    series = self._data_grid.df[field]
+                    files = series[index]
+                    if not (str(files) == "nan"):
+                        try:
+                            tree = json.loads(files)
+                            filelist = self._get_file_list(tree)
+                            for f in filelist:
+                                try:
+                                    if os.path.isdir(f):
+                                        for (dirpath, dirnames, filenames) in os.walk(f):
+                                            for subfile in filenames:
+                                                subpath = os.sep.join([dirpath, subfile])
+                                                zip.write(subpath, subpath, zipfile.ZIP_DEFLATED)
+                                    zip.write(f, f, zipfile.ZIP_DEFLATED)
+                                except Exception:
+                                    print "Couldn't find file: ", f
+
+                        except Exception:
+                            pass
+            pass
+        except IOError:
+            t = TipWidget()
+            t.tip = "You entered an invalid filename."
+
     def show(self, fields=None):
         self._visible_fields = fields
         if self._all_tips or self._show_tip:
@@ -147,10 +190,11 @@ class Database:
                     tip = TipWidget()
                     tip.tip = "Select files to place in this field."
                     display(tip)
-                    files = IPFileSelector()
                     existing = self._show_df[radio.value][self._data_grid.get_selected_rows()[0]]
+                    selected = dict()
                     if len(existing) > 0:
-                        files.selected = json.loads(existing)
+                        selected = json.loads(existing)
+                    files = IPFileSelector(selected=selected)
                     display(files)
                     def ok_file_select(widget):
                         newjson = json.dumps(files.selected)
@@ -180,7 +224,34 @@ class Database:
             display(box)
             ok = widgets.Button(description="OK")
             display(ok)
-            pass
+            def export_ok_click(widget):
+                export_fields = [ ]
+                for check in checks:
+                    if check.value:
+                        export_fields.append(check.description)
+                label.close()
+                box.close()
+                widget.close()
+                explabel = widgets.Label(value="Enter a name for the zipfile that will contain your exported files")
+                display(explabel)
+                expfilename = widgets.Text(placeholder='filename')
+                display(expfilename)
+                def expfilename_ok_click(widget):
+                    explabel.close()
+                    filename = expfilename.value
+                    expfilename.close()
+                    expfilename_ok.close()
+                    widget.close()
+                    if len(filename) > 0:
+                        filename = filename.strip()
+                        if not filename.endswith(".zip"):
+                            filename = filename + ".zip"
+                        self.export(fields=export_fields, filename=filename)
+                    pass
+                expfilename_ok = widgets.Button(description="OK")
+                expfilename_ok.on_click(expfilename_ok_click)
+                display(expfilename_ok)
+            ok.on_click(export_ok_click)
 
         save_button = widgets.Button(description='Save changes')
         save_button.on_click(save_button_click)
