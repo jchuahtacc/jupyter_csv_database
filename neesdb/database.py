@@ -1,6 +1,6 @@
 import pandas
 import json
-from qgrid import show_grid
+from qgrid import QGridWidget
 from .fields import FieldsWidget
 from .tip import TipWidget
 import ipywidgets as widgets
@@ -124,7 +124,8 @@ class Database:
         t.tip = "Filter the data for the rows you wish edit or view. You may add or remove rows from the database, add file references to the currently selected row, and export all files in the current view. If you modify, add or remove data or files, make sure you click 'Save changes'."
         t.src = "place_holder.mp4"
         display(t)
-        self._data_grid = show_grid(self._show_df, grid_options=self._grid_options)
+        self._data_grid = QGridWidget(df=self._show_df, grid_options=self._grid_options)
+        display(self._data_grid)
         def add_button_click(widget):
             self._data_grid.add_row()
 
