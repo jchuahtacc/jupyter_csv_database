@@ -8,6 +8,7 @@ from IPython.display import display
 from ipywidgets_file_selector import IPFileSelector
 import zipfile
 import os
+import numpy as np
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -35,7 +36,7 @@ class Database:
         'enableColumnReorder': False,
         'enableTextSelectionOnCells': True,
         'editable': True,
-        'autoEdit': True,
+        'autoEdit': False,
         'multiSelect' : False
     }
     _add_files_box = None
@@ -44,7 +45,7 @@ class Database:
     def __init__(self, csv, tips=False):
         self._all_tips = tips
         self._csv = csv
-        self._df = pandas.read_csv(csv)
+        self._df = pandas.read_csv(csv, index_col=False)
         self._fields = pandas.Series([ field for field in self._df.columns.values], name="Fields")
 
     def _get_selected_fields(self, widget):
@@ -150,6 +151,8 @@ class Database:
 
                         except Exception:
                             pass
+            html = widgets.HTML("Your exported files are available for download: <a href='./" + filename + "'>" + filename + "</a>")
+            display(html)
             pass
         except IOError:
             t = TipWidget()
@@ -162,7 +165,10 @@ class Database:
             t.tip = "If you know the names of the fields in this .csv and you wish to bypass the user interface, you can use the following code"
             t.code = "from neesdb import Database\ndb = new Database('" + self._csv + "')\ndb.show(" + str(fields) + ")"
             display(t)
-        self._show_df = self._df[fields]
+        if fields is not None:
+            self._show_df = self._df[fields]
+        else:
+            self._show_df = self._df
         t = TipWidget()
         t.tip = "Filter the data for the rows you wish edit or view. You may add or remove rows from the database, add file references to the currently selected row, and export all files in the current view. If you modify, add or remove data or files, make sure you click 'Save changes'."
         t.src = "place_holder.mp4"
@@ -192,7 +198,7 @@ class Database:
                     display(tip)
                     existing = self._show_df[radio.value][self._data_grid.get_selected_rows()[0]]
                     selected = dict()
-                    if len(existing) > 0:
+                    if len(str(existing)) > 0:
                         selected = json.loads(existing)
                     files = IPFileSelector(selected=selected)
                     display(files)
@@ -213,6 +219,17 @@ class Database:
                 self._add_files_box=widgets.Box(children=[label, radio, ok])
 
         def save_button_click(widget):
+            self._df.update(self._data_grid.df)
+            outer = pandas.merge(self._df, self._data_grid.df, how='outer')
+            left_series = [ ]
+            for col in self._df.columns:
+                if not col in self._data_grid.df.columns:
+                    left_series.append(col)
+            diff = outer[outer.isin(self._df)][left_series]
+            outer[diff.isnull()] = np.nan
+            self._df = outer
+            self._df.to_csv(self._csv, index=False)
+            display(widgets.HTML("<script>alert('Changes saved to " + self._csv + "');</script>"))
             pass
 
         def export_button_click(widget):
