@@ -179,7 +179,10 @@ class Database:
             self._data_grid.add_row()
 
         def remove_button_click(widget):
-            self._data_grid.remove_row()
+            sel = self._data_grid.get_selected_rows()
+            if len(sel) > 0:
+                self._df = self._df.drop(self._df.index[sel])
+                self._data_grid.remove_row()
 
         def add_files_button_click(widget):
             selected_rows = self._data_grid.get_selected_rows()
