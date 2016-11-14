@@ -87,7 +87,7 @@ class Database:
         if self._all_tips or self._fields_tip:
             t = TipWidget()
             t.tip = "Select the fields that you wish to view"
-            t.src = "select_fields.mp4"
+            #t.src = "select_fields.mp4"
             display(t)
 
         display(_fields_widget)
@@ -171,7 +171,7 @@ class Database:
             self._show_df = self._df
         t = TipWidget()
         t.tip = "Filter the data for the rows you wish edit or view. You may add or remove rows from the database, add file references to the currently selected row, and export all files in the current view. If you modify, add or remove data or files, make sure you click 'Save changes'."
-        t.src = "place_holder.mp4"
+        #t.src = "place_holder.mp4"
         display(t)
         self._data_grid = QGridWidget(df=self._show_df, grid_options=self._grid_options)
         display(self._data_grid)
@@ -201,7 +201,7 @@ class Database:
                     display(tip)
                     existing = self._show_df[radio.value][self._data_grid.get_selected_rows()[0]]
                     selected = dict()
-                    if len(str(existing)) > 0:
+                    if not np.isnan(existing) and  len(str(existing)) > 0:
                         selected = json.loads(existing)
                     files = IPFileSelector(selected=selected)
                     display(files)
@@ -305,7 +305,7 @@ class Database:
             pass
         t = TipWidget()
         t.tip = "Select the fields which contain filenames to export."
-        t.video = "place_holder.mp4"
+#        t.video = "place_holder.mp4"
         display(t)
 
         display(_fields_widget)
