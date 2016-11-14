@@ -130,6 +130,9 @@ class Database:
     def export(self, fields=None, filename=None):
         try:
             zip = zipfile.ZipFile(filename, 'w')
+            self._df.loc[self._data_grid.filtered].to_csv('__temp.csv', index=False)
+            zip.write('__temp.csv', self._csv, zipfile.ZIP_DEFLATED)
+            os.remove('__temp.csv')
             for field in fields:
                 for index in self._data_grid.filtered:
                     series = self._data_grid.df[field]
