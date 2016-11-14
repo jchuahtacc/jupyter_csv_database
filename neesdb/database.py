@@ -9,6 +9,7 @@ from ipywidgets_file_selector import IPFileSelector
 import zipfile
 import os
 import numpy as np
+import StringIO
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -45,7 +46,13 @@ class Database:
     def __init__(self, csv, tips=False):
         self._all_tips = tips
         self._csv = csv
-        self._df = pandas.read_csv(csv, index_col=False)
+        fcontents = open(csv, 'r').read()
+        try:
+            contents = fcontents.encode('utf8')
+        except UnicodeDecodeError:
+            contents = fcontents.decode('iso-8859-1').encode('utf8')
+        buff = StringIO.StringIO(contents)
+        self._df = pandas.read_csv(buff, index_col=False, encoding='utf8')
         self._fields = pandas.Series([ field for field in self._df.columns.values], name="Fields")
 
     def _get_selected_fields(self, widget):
@@ -130,7 +137,7 @@ class Database:
     def export(self, fields=None, filename=None):
         try:
             zip = zipfile.ZipFile(filename, 'w')
-            self._df.loc[self._data_grid.filtered].to_csv('__temp.csv', index=False)
+            self._df.loc[self._data_grid.filtered].to_csv('__temp.csv', index=False, encoding='utf8')
             zip.write('__temp.csv', self._csv, zipfile.ZIP_DEFLATED)
             os.remove('__temp.csv')
             for field in fields:
@@ -234,7 +241,7 @@ class Database:
             diff = outer[outer.isin(self._df)][left_series]
             outer[diff.isnull()] = np.nan
             self._df = outer
-            self._df.to_csv(self._csv, index=False)
+            self._df.to_csv(self._csv, index=False, encoding='utf8')
             display(widgets.HTML("<script>alert('Changes saved to " + self._csv + "');</script>"))
             pass
 
