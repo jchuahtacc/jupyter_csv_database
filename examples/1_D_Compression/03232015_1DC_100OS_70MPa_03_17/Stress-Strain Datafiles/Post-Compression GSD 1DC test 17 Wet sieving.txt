@@ -1,0 +1,23 @@
+1DC Test 17		
+Test name: 03232015_1DC_100OS_70MPA_03_17		
+Test author: AMP		
+Material: Ottawa sand F-65		
+Soil batch delivered to: UCDavis CGM		
+Soil batch delivery date: 05/2014		
+GSD #	17	
+Sample state	Dense	
+Max vertical effectitve stress (MPa)	70	
+P. Diammeter	P. Passing	
+(mm)	(%)	
+0.600	100.00%	
+0.425	100.00%	
+0.25	77.13%	
+0.125	15.52%	
+0.075	8.65%	
+0.045	6.68%	
+		
+		
+		
+		
+		
+		
