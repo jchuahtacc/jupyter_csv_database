@@ -83,6 +83,9 @@ class Database:
         _fields_widget.fields = fields_dict
         return _fields_widget
 
+    def _alert(self, msg):
+        display(widgets.HTML("<script>alert('" + msg + "');</script>"))
+
     def _markdown(self, data):
         display(Markdown(data=data))
 
@@ -99,6 +102,9 @@ class Database:
         _fields_widget = self._make_fields_widget(fields)
 
         children = []
+        t = TipWidget()
+        t.tip = "Select fields to display"
+        children.append(t)
         children.append(_fields_widget)
 
         def _click(widget):
@@ -216,7 +222,7 @@ class Database:
             if len(selected_rows) > 0:
                 fields = self._possible_file_fields()
                 if len(fields) == 0:
-                    display(widgets.HTML("<script>alert('No file fields were found in the current view.');</script>"))
+                    self._alert("No file fields were found in the current view.")
                 else:
                     label = widgets.Label(value="Select a field to add files")
                     display(label)
@@ -254,13 +260,13 @@ class Database:
         def save_button_click(widget):
             self._merge()
             self._df.to_csv(self._csv, index=False, encoding='utf8')
-            display(widgets.HTML("<script>alert('Changes saved to " + self._csv + "');</script>"))
+            self._alert("Changes saved to " + self._csv);
             pass
 
         def export_button_click(widget):
             fields = self._possible_file_fields()
             if len(fields) == 0:
-                display(widgets.HTML("<script>alert('No file fields were found in the current view.');</script>"))
+                self._alert("No file fields were found in the current view")
             else:
                 label = widgets.Label(value="Select fields containing files you wish to export")
                 display(label)
