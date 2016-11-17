@@ -187,9 +187,9 @@ class Database:
     def show(self, fields=None):
         self._visible_fields = fields
         if self._all_tips or self._show_tip:
-            #t = TipWidget()
-            #t.tip = "If you know the names of the fields in this .csv and you wish to bypass the user interface, you can use the following code"
-            #t.code = "from neesdb import Database\ndb = new Database('" + self._csv + "')\ndb.show(" + str(fields) + ")"
+            t = TipWidget()
+            t.tip = "If you know the names of the fields in this .csv and you wish to bypass the user interface, you can use the following code"
+            t.code = "from neesdb import Database\ndb = new Database('" + self._csv + "')\ndb.show(" + str(fields) + ")"
             display(t)
         if fields is not None:
             self._show_df = self._df[fields]
