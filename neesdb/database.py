@@ -4,7 +4,8 @@ from qgrid import QGridWidget
 from .fields import FieldsWidget
 from .tip import TipWidget
 import ipywidgets as widgets
-from IPython.display import display
+from IPython.display import display, Markdown
+from IPython import get_ipython
 from ipywidgets_file_selector import IPFileSelector
 import zipfile
 import os
@@ -82,6 +83,12 @@ class Database:
         _fields_widget.fields = fields_dict
         return _fields_widget
 
+    def _markdown(self, data):
+        display(Markdown(data=data))
+
+    def _code(self, data):
+        get_ipython().set_next_input(data)
+
     def fields(self, fields=None):
         if (fields is not None):
             self._check_bad_fields(fields)
@@ -91,20 +98,17 @@ class Database:
 
         _fields_widget = self._make_fields_widget(fields)
 
-        if self._all_tips or self._fields_tip:
-            t = TipWidget()
-            t.tip = "Select the fields that you wish to view"
-            #t.src = "select_fields.mp4"
-            display(t)
+        children = []
+        children.append(_fields_widget)
 
-        display(_fields_widget)
         def _click(widget):
             _fields_widget.close()
             widget.close()
             self.show(self._get_selected_fields(_fields_widget))
         ok = widgets.Button(description="OK")
         ok.on_click(_click)
-        display(ok)
+        children.append(ok)
+        display(widgets.Box(children=children))
 
     def _merge(self):
         self._df.update(self._data_grid.df)
@@ -183,9 +187,9 @@ class Database:
     def show(self, fields=None):
         self._visible_fields = fields
         if self._all_tips or self._show_tip:
-            t = TipWidget()
-            t.tip = "If you know the names of the fields in this .csv and you wish to bypass the user interface, you can use the following code"
-            t.code = "from neesdb import Database\ndb = new Database('" + self._csv + "')\ndb.show(" + str(fields) + ")"
+            #t = TipWidget()
+            #t.tip = "If you know the names of the fields in this .csv and you wish to bypass the user interface, you can use the following code"
+            #t.code = "from neesdb import Database\ndb = new Database('" + self._csv + "')\ndb.show(" + str(fields) + ")"
             display(t)
         if fields is not None:
             self._show_df = self._df[fields]
