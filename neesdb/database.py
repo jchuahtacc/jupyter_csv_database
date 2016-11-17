@@ -106,6 +106,18 @@ class Database:
         ok.on_click(_click)
         display(ok)
 
+    def _merge(self):
+        self._df.update(self._data_grid.df)
+        outer = pandas.merge(self._df, self._data_grid.df, how='outer')
+        left_series = [ ]
+        for col in self._df.columns:
+            if not col in self._data_grid.df.columns:
+                left_series.append(col)
+        diff = outer[outer.isin(self._df)][left_series]
+        outer[diff.isnull()] = np.nan
+        self._df = outer
+
+
     def _possible_file_fields(self):
         valid_fields = [ ]
         for field in self._visible_fields:
@@ -187,6 +199,7 @@ class Database:
         display(self._data_grid)
         def add_button_click(widget):
             self._data_grid.add_row()
+            self._merge()
 
         def remove_button_click(widget):
             sel = self._data_grid.get_selected_rows()
@@ -211,7 +224,7 @@ class Database:
                     display(tip)
                     existing = self._show_df[radio.value][self._data_grid.get_selected_rows()[0]]
                     selected = dict()
-                    if not np.isnan(existing) and  len(str(existing)) > 0:
+                    if len(str(existing)) > 0 and not str(existing) == "nan":
                         selected = json.loads(existing)
                     files = IPFileSelector(selected=selected)
                     display(files)
@@ -232,15 +245,7 @@ class Database:
                 self._add_files_box=widgets.Box(children=[label, radio, ok])
 
         def save_button_click(widget):
-            self._df.update(self._data_grid.df)
-            outer = pandas.merge(self._df, self._data_grid.df, how='outer')
-            left_series = [ ]
-            for col in self._df.columns:
-                if not col in self._data_grid.df.columns:
-                    left_series.append(col)
-            diff = outer[outer.isin(self._df)][left_series]
-            outer[diff.isnull()] = np.nan
-            self._df = outer
+            self._merge()
             self._df.to_csv(self._csv, index=False, encoding='utf8')
             display(widgets.HTML("<script>alert('Changes saved to " + self._csv + "');</script>"))
             pass
