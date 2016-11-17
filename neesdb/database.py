@@ -211,38 +211,41 @@ class Database:
             selected_rows = self._data_grid.get_selected_rows()
             if len(selected_rows) > 0:
                 fields = self._possible_file_fields()
-                label = widgets.Label(value="Select a field to add files")
-                display(label)
-                radio = widgets.RadioButtons(options=fields)
-                display(radio)
-                def go_for_files(widget):
-                    label.close()
-                    radio.close()
-                    widget.close()
-                    tip = TipWidget()
-                    tip.tip = "Select files to place in this field."
-                    display(tip)
-                    existing = self._show_df[radio.value][self._data_grid.get_selected_rows()[0]]
-                    selected = dict()
-                    if len(str(existing)) > 0 and not str(existing) == "nan":
-                        selected = json.loads(existing)
-                    files = IPFileSelector(selected=selected)
-                    display(files)
-                    def ok_file_select(widget):
-                        newjson = json.dumps(files.selected)
-                        self._data_grid.df[radio.value][self._data_grid.get_selected_rows()[0]] = newjson
-                        self._data_grid._df_changed()
-                        tip.close()
-                        files.close()
+                if len(fields) == 0:
+                    display(widgets.HTML("<script>alert('No file fields were found in the current view.');</script>"))
+                else:
+                    label = widgets.Label(value="Select a field to add files")
+                    display(label)
+                    radio = widgets.RadioButtons(options=fields)
+                    display(radio)
+                    def go_for_files(widget):
+                        label.close()
+                        radio.close()
                         widget.close()
+                        tip = TipWidget()
+                        tip.tip = "Select files to place in this field."
+                        display(tip)
+                        existing = self._show_df[radio.value][self._data_grid.get_selected_rows()[0]]
+                        selected = dict()
+                        if len(str(existing)) > 0 and not str(existing) == "nan":
+                            selected = json.loads(existing)
+                        files = IPFileSelector(selected=selected)
+                        display(files)
+                        def ok_file_select(widget):
+                            newjson = json.dumps(files.selected)
+                            self._data_grid.df[radio.value][self._data_grid.get_selected_rows()[0]] = newjson
+                            self._data_grid._df_changed()
+                            tip.close()
+                            files.close()
+                            widget.close()
+                        ok = widgets.Button(description="OK")
+                        ok.on_click(ok_file_select)
+                        display(ok)
+                        pass
                     ok = widgets.Button(description="OK")
-                    ok.on_click(ok_file_select)
+                    ok.on_click(go_for_files)
                     display(ok)
-                    pass
-                ok = widgets.Button(description="OK")
-                ok.on_click(go_for_files)
-                display(ok)
-                self._add_files_box=widgets.Box(children=[label, radio, ok])
+                    self._add_files_box=widgets.Box(children=[label, radio, ok])
 
         def save_button_click(widget):
             self._merge()
@@ -252,41 +255,44 @@ class Database:
 
         def export_button_click(widget):
             fields = self._possible_file_fields()
-            label = widgets.Label(value="Select fields containing files you wish to export")
-            display(label)
-            checks = [ widgets.Checkbox(description=field) for field in fields ]
-            box = widgets.Box(children=checks)
-            display(box)
-            ok = widgets.Button(description="OK")
-            display(ok)
-            def export_ok_click(widget):
-                export_fields = [ ]
-                for check in checks:
-                    if check.value:
-                        export_fields.append(check.description)
-                label.close()
-                box.close()
-                widget.close()
-                explabel = widgets.Label(value="Enter a name for the zipfile that will contain your exported files")
-                display(explabel)
-                expfilename = widgets.Text(placeholder='filename')
-                display(expfilename)
-                def expfilename_ok_click(widget):
-                    explabel.close()
-                    filename = expfilename.value
-                    expfilename.close()
-                    expfilename_ok.close()
+            if len(fields) == 0:
+                display(widgets.HTML("<script>alert('No file fields were found in the current view.');</script>"))
+            else:
+                label = widgets.Label(value="Select fields containing files you wish to export")
+                display(label)
+                checks = [ widgets.Checkbox(description=field) for field in fields ]
+                box = widgets.Box(children=checks)
+                display(box)
+                ok = widgets.Button(description="OK")
+                display(ok)
+                def export_ok_click(widget):
+                    export_fields = [ ]
+                    for check in checks:
+                        if check.value:
+                            export_fields.append(check.description)
+                    label.close()
+                    box.close()
                     widget.close()
-                    if len(filename) > 0:
-                        filename = filename.strip()
-                        if not filename.endswith(".zip"):
-                            filename = filename + ".zip"
-                        self.export(fields=export_fields, filename=filename)
-                    pass
-                expfilename_ok = widgets.Button(description="OK")
-                expfilename_ok.on_click(expfilename_ok_click)
-                display(expfilename_ok)
-            ok.on_click(export_ok_click)
+                    explabel = widgets.Label(value="Enter a name for the zipfile that will contain your exported files")
+                    display(explabel)
+                    expfilename = widgets.Text(placeholder='filename')
+                    display(expfilename)
+                    def expfilename_ok_click(widget):
+                        explabel.close()
+                        filename = expfilename.value
+                        expfilename.close()
+                        expfilename_ok.close()
+                        widget.close()
+                        if len(filename) > 0:
+                            filename = filename.strip()
+                            if not filename.endswith(".zip"):
+                                filename = filename + ".zip"
+                            self.export(fields=export_fields, filename=filename)
+                        pass
+                    expfilename_ok = widgets.Button(description="OK")
+                    expfilename_ok.on_click(expfilename_ok_click)
+                    display(expfilename_ok)
+                ok.on_click(export_ok_click)
 
         save_button = widgets.Button(description='Save changes')
         save_button.on_click(save_button_click)
