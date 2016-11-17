@@ -13,6 +13,7 @@ define(['jquery', path ], function($, widget) {
             FieldsWidgetView.__super__.render.apply(this, arguments);
             this.$table = this.getTableSkeleton();
             this._fields = { };
+            $(this.el).append($("<strong>Select the fields you wish to view</strong>"));
             $(this.el).append(this.$table);
             this.listenTo(this.model, 'change:fields', this._fields_changed, this);
             this._fields_changed()
