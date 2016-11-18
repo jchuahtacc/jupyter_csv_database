@@ -5,7 +5,9 @@ from .fields import FieldsWidget
 from .tip import TipWidget
 import ipywidgets as widgets
 from IPython.display import display, Markdown
-from IPython import get_ipython
+import base64
+from IPython.display import Javascript, display
+from IPython.utils.py3compat import str_to_bytes, bytes_to_str
 from ipywidgets_file_selector import IPFileSelector
 import zipfile
 import os
@@ -43,6 +45,7 @@ class Database:
     }
     _add_files_box = None
     _export_files_box = None
+    _ip = None
 
     def __init__(self, csv, tips=False):
         self._all_tips = tips
@@ -89,8 +92,12 @@ class Database:
     def _markdown(self, data):
         display(Markdown(data=data))
 
-    def _code(self, data):
-        get_ipython().set_next_input(data)
+    def _code(self, code='', where='below'):
+        encoded_code = bytes_to_str(base64.b64encode(str_to_bytes(code)))
+        display(Javascript("""
+                var code = IPython.notebook.insert_cell_{0}('code');
+                code.set_text(atob("{1}"));
+            """.format(where, encoded_code)))
 
     def fields(self, fields=None):
         if (fields is not None):
@@ -110,7 +117,9 @@ class Database:
         def _click(widget):
             _fields_widget.close()
             widget.close()
-            self.show(self._get_selected_fields(_fields_widget))
+            t.tip = "Code cells have been generated to retrieve your data."
+            self._code("# Run this code cell to repeat your field selection\n\nfrom neesdb import Database\ndb = Database(\"" + self._csv + "\")\ndb.fields(" + str(self._get_selected_fields(_fields_widget)) + ")")
+            self._code("# Run this code cell to repeat show the fields you selected\n\nfrom neesdb import Database\ndb = Database(\"" + self._csv + "\")\ndb.show(" + str(self._get_selected_fields(_fields_widget)) + ")", "at_bottom")
         ok = widgets.Button(description="OK")
         ok.on_click(_click)
         children.append(ok)
@@ -187,8 +196,7 @@ class Database:
             display(html)
             pass
         except IOError:
-            t = TipWidget()
-            t.tip = "You entered an invalid filename."
+            self._alert("You entered an invalid filename.")
 
     def show(self, fields=None):
         self._visible_fields = fields
