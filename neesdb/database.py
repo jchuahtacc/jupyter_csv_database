@@ -17,6 +17,10 @@ import StringIO
 import warnings
 warnings.filterwarnings('ignore')
 
+import qgrid
+qgrid.set_defaults(remote_js=True)
+qgrid.nbinstall(user=True, overwrite=True)
+
 class Database:
     _csv = None
     _fields_grid = None
